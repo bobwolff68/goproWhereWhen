@@ -33,5 +33,22 @@
 
  GPX format is simple XML for these purposes and the file 'gpx-sample.xml' is similar to how this will output to that form.
 
+# Options
+** --help
+** --version
+ --logfile=
+ --infile=
+** --sourcedir=
+** --recursive
+ --destdir= | --output= (stdout if none specified)
+ --fileext=  (default is .MP4 and .mp4)
+ --exportcsv
+ --exportgpx
+ --combinetracks | --separatetracks
+ --maxsamples
+ --timebetweensamples
+ --dryrun (dont actually process the files - just list them and show what would have been)
+
+
 # Conclusion
  Author: Robert M. Wolff - bob dawt wolff 68 aht gmail.com
