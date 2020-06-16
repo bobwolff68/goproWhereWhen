@@ -27,7 +27,9 @@
  Additionally, a simple XML writer library found on codeproject called 'xmlwriter' was used to facilitate
  being able to export the GPS data into the GPX format. Author: Oboltus - https://www.codeproject.com/Articles/5588/Simple-C-class-for-XML-writing
 
- Getopt - https://github.com/r-lyeh-archived/getopt
+ Getopt - https://github.com/r-lyeh-archived/getopt -- Oddly, on Mac I was unable to get the simpler
+ getarg() method to function even in the sample (seems a compilation issue) but the OOP map based version
+ works fine so that'll be what I use.
 
  GPX format is simple XML for these purposes and the file 'gpx-sample.xml' is similar to how this will output to that form.
 
