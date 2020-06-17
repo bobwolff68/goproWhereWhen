@@ -13,9 +13,20 @@ opts::opts() {
 		sourceDirRecursive = false;
 		fileExtRaw = "MP4";
 		fileExtList.clear();
+		inFile="";
 	};
 
 opts::~opts() {};
+
+bool opts::expandPath(const char* inPath, std::string &expandedPath) {
+  int status;
+  wordexp_t exp_result;
+  status = wordexp(inPath, &exp_result, 0);  
+  expandedPath = exp_result.we_wordv[0];
+  wordfree(&exp_result);
+
+  return status==0;
+}
 
 void opts::processOpts(int argc, const char** argv) {
 	    struct getopt args( argc, argv );
@@ -43,11 +54,21 @@ void opts::processOpts(int argc, const char** argv) {
 	    }
 
 	    if( args.has("--sourcedir") ) {
-	        sourceDir = args["--sourcedir"];
+	    	if (!expandPath(args["--sourcedir"].c_str(), sourceDir)) {
+	    		std::cout << "ERROR: Expansion of path failed: " << args["--sourcedir"] << std::endl;
+	    		exit(-4);
+	    	}
 	    }
 
 	    if( args.has("--fileext") ) {
 	        fileExtRaw = args["--fileext"];
+	    }
+
+	    if( args.has("--infile") ) {
+	        if (!expandPath(args["--infile"].c_str(), inFile)) {
+	    		std::cout << "ERROR: Expansion of path failed: " << args["--infile"] << std::endl;
+	    		exit(-5);
+	        }
 	    }
 
 	    if( args.has("--recursive") ) {
@@ -71,7 +92,8 @@ void opts::showHelp() {
 			<< " --help : Print this message." << std::endl
 			<< " --version : Print product version." << std::endl
 			<< " --sourcedir=<directory> : Process MP4 files from this location." << std::endl
-			<< " --fileext=extlist [no '*' or '.' ... just extensions separated by commas (ie mp4,mov,mpeg)" << std::endl
+			<< " --fileext=extlist [no '*' or '.' ... just extensions separated by commas (ie mp4,mov,mpeg)]" << std::endl
+			<< " --infile=filename [process a singular input file - mutually exclusive from --sourcedir and --fileext]" << std::endl
 			<< " --recursive : Process sourcedir and all directories under it. (default: false)" << std::endl
 			<< std::endl;
 	};

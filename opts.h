@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include <wordexp.h>
+
 #include "getopt/getopt.hpp"
 
 #define PROG_NAME "goproWhereWhen"
@@ -22,6 +24,7 @@ public:
 	~opts();
 	void processOpts(int argc, const char** argv);
 	void showHelp();
+	bool expandPath(const char* inPath, std::string &expandedPath);
 
 	// Flags and option values
 	std::string logFileName;
@@ -29,6 +32,7 @@ public:
 	bool sourceDirRecursive;
 	std::vector<std::string> fileExtList;
 	std::string fileExtRaw;
+	std::string inFile;
 
 };
 #endif
