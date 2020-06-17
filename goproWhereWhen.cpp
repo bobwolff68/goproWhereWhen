@@ -29,84 +29,9 @@
 #include <dirent.h>
 
 #include "getopt/getopt.hpp"
+#include "opts.h"
 
 using namespace std;
-
-#define PROG_NAME "goproWhereWhen"
-#define PROG_VER  "0.5"
-
-class opts {
-public:
-	opts() {
-		logFileName="";
-		sourceDir="";
-		sourceDirRecursive = false;
-		fileExtRaw = "MP4";
-		fileExtList.clear();
-	};
-	~opts() {};
-	void processOpts(int argc, const char** argv) {
-	    struct getopt args( argc, argv );
-
-	    if( args.has("-h") || args.has("--help") || args.has("-?") || args.size() == 1 ) {
-	        showHelp();
-	        exit(1);
-	    }
-
-	    if( args.has("--version") ) {
-	        std::cout << args["0"] << PROG_NAME << " Version " << PROG_VER << " Compiled on " << __DATE__ << std::endl;
-	        exit(2);
-	    }
-
-	    if ( args.has("--showargs") ) {
-	   	    std::cout << "---" << std::endl;
-		    std::cout << args.cmdline() << std::endl;
- 			std::cout << args.size() << " MAP: " << args.str() << std::endl;
- 			exit(3);
-	    }
-
-	    if( args.has("--sourcedir") ) {
-	        sourceDir = args["--sourcedir"];
-	    }
-
-	    if( args.has("--fileext") ) {
-	        fileExtRaw = args["--fileext"];
-	    }
-
-	    if( args.has("--recursive") ) {
-	        sourceDirRecursive=true;
-	    }
-
-#if 0
-    if( args.has("-d") || args.has("--depth") || args.has("--max-depth") ) {
-        std::string arg = args["-d"];
-        if( arg.empty() ) arg = args["--depth"];
-        if( arg.empty() ) arg = args["--max-depth"];
-        int depth = atoi( arg.c_str() );
-        std::cout << "provided depth: " << depth << std::endl;
-    }
-#endif
-
-	};
-
-	void showHelp() {
-		cout << "goproWhereWhen Usage:" << endl
-			<< " --help : Print this message." << endl
-			<< " --version : Print product version." << endl
-			<< " --sourcedir=<directory> : Process MP4 files from this location." << endl
-			<< " --fileext=extlist [no '*' or '.' ... just extensions separated by commas (ie mp4,mov,mpeg)" << endl
-			<< " --recursive : Process sourcedir and all directories under it. (default: false)" << endl
-			<< endl;
-	};
-
-	// Flags and option values
-	string logFileName;
-	string sourceDir;
-	bool sourceDirRecursive;
-	vector<string> fileExtList;
-	string fileExtRaw;
-
-};
 
 opts options;
 
