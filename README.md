@@ -41,7 +41,7 @@
 ** --sourcedir=
 ** --recursive
  --destdir= | --output= (stdout if none specified)
- --fileext=  (default is .MP4 and .mp4)
+ --fileext=  (default is .MP4 and .mp4 - list shall be comma separated without spaces, without '*' and without '.' globbing/regex. It is simply a list of file-endings. For instance, --fileext=mp4,mov,mpeg,mpg ... and note upper/lower case does not matter.
  --exportcsv
  --exportgpx
  --combinetracks | --separatetracks

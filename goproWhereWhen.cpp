@@ -41,6 +41,8 @@ public:
 		logFileName="";
 		sourceDir="";
 		sourceDirRecursive = false;
+		fileExtRaw = "MP4";
+		fileExtList.clear();
 	};
 	~opts() {};
 	void processOpts(int argc, const char** argv) {
@@ -67,6 +69,10 @@ public:
 	        sourceDir = args["--sourcedir"];
 	    }
 
+	    if( args.has("--fileext") ) {
+	        fileExtRaw = args["--fileext"];
+	    }
+
 	    if( args.has("--recursive") ) {
 	        sourceDirRecursive=true;
 	    }
@@ -88,6 +94,7 @@ public:
 			<< " --help : Print this message." << endl
 			<< " --version : Print product version." << endl
 			<< " --sourcedir=<directory> : Process MP4 files from this location." << endl
+			<< " --fileext=extlist [no '*' or '.' ... just extensions separated by commas (ie mp4,mov,mpeg)" << endl
 			<< " --recursive : Process sourcedir and all directories under it. (default: false)" << endl
 			<< endl;
 	};
@@ -96,6 +103,8 @@ public:
 	string logFileName;
 	string sourceDir;
 	bool sourceDirRecursive;
+	vector<string> fileExtList;
+	string fileExtRaw;
 
 };
 
@@ -162,17 +171,221 @@ void getAllFilesFromPath(const char* inPath, bool bRecurse, vector<string>& file
   	}
 }
 
+void tailLowerCase(string source, unsigned int take, string &dest) {
+	string mine(source);
+
+	// tolower the whole source string.
+	std::transform(mine.begin(), mine.end(), mine.begin(),
+    [](unsigned char c){ return std::tolower(c); });
+
+	if (take < mine.size()) {
+		dest = mine.substr(mine.size() - take);
+	}
+	else 
+		dest = mine;
+}
+
+//
+// Validation rules:
+// - Comma separated
+// - No * allowed
+// - No . allowed
+// - No spaces (shouldn't be possible due to getopt parsing)
+// - extension should not exceed 5 characters in length (3 or 4 or 5 is reasonable)
+// - destList should contain at least one entry on exit
+//
+// Output is all lowercase
+// Output is a vector of strings for iterating through
+//
+bool validateFileExts(const char* endingList, vector<string> &destList) {
+	string input(endingList);
+
+	// tolower the whole source string.
+	std::transform(input.begin(), input.end(), input.begin(),
+    [](unsigned char c){ return std::tolower(c); });
+
+	destList.clear();
+
+	// Invalid to have . or * in the list
+	// List should be comma separated file endings only.
+	// For instance: mp4,mpeg,mov,mpx
+	if (input.find_first_of("*. ") != string::npos)
+		return false;
+
+	size_t start=0;
+	size_t end=0;
+	do {
+		end = input.find(",",start);
+//		cout << "start=" << start << ", end=" << end << endl;
+
+		if (end==start) {
+			// repeating ',' situation ... advance start pointer
+			start++;
+			continue;
+		}
+
+		if (end==string::npos) // reached the end
+		{
+			// Grab the last entry
+			destList.push_back(input.substr(start));
+			break;
+		}
+		else
+		{
+			// Add this 'chunk' from start to end
+			destList.push_back(input.substr(start, end-start));
+			start = end+1;
+			// Special case if someone puts a ',' at the end.
+			if (start>=input.size())
+				break;
+		}
+
+		if (destList.back().length() > 5 || destList.back().length() == 0)
+			return false;
+
+	} while(start < input.size());
+
+	// Catch the 'break' cases and check the last entry for length validation.
+	// Also check for the case where there's nothing in destList
+	// Lastly check for an empty entry where start==end above.
+	if (destList.empty() || destList.back().length() > 5 || destList.back().length() == 0)
+		return false;
+
+	return true;
+}
+
+void unittest_ExtValidation() {
+  string test[11];
+  test[0] = "MP4,MOV,MPEG";
+  test[1] = "MP4";
+  test[2] = "mov,MP4,";
+  test[3] = "abc,,def";
+  test[4] = ",,,mpeg";
+  // Everything else should fail
+  test[5] = "ABC,*.mp3";
+  test[6] = "";
+  test[7] = ",";
+  test[8] = ",,";
+  test[9] = "abc,.123";
+  test[10] = "abc,longext,not";
+
+  for (auto it: test) {
+  	vector<string> out;
+  	cout << "Checking: '" << it << "' : ";
+
+  	if (!validateFileExts(it.c_str(), out)) {
+  		cout << "FAILED." << endl;
+  	}
+  	else {
+  		cout << "PASSED. Extensions follow: ";
+  		for (auto j: out)
+  			cout << "'" << j << "' ";
+  		cout << endl;
+  	}
+  }
+}
+
+void pruneFilesList(vector<string> &filesInOut, vector<string> toKeep) {
+	bool bMatch;
+
+	for (std::vector<string>::iterator it = filesInOut.begin() ; it != filesInOut.end(); ) {
+//  	for (auto it: filesInOut) {
+		// Iterate through the files and remove any that dont match
+		// must be a match for one of 'toKeep'
+
+		bMatch = false;
+//		cout << "Checking on file: " << *it << " -- Against: ";
+		for (auto ext: toKeep) {
+			string toMatch, currentEnding;
+			toMatch = "." + ext;
+
+//			cout << "'" << toMatch << "' ";
+
+			if (it->length() >= toMatch.length()) {
+				// Good to go for comparing
+				tailLowerCase(*it, toMatch.length(), currentEnding);
+
+				// Now the check
+				if (toMatch == currentEnding) {
+					bMatch = true;
+//					cout << "MATCH";
+					break;		// Not critical as the flag dictates further logic.
+				}
+			}
+
+		}
+
+		if (!bMatch) {
+//			cout << "No Match. PRUNE OUT.";
+			filesInOut.erase(it);
+			// Now do NOT iterate because we've deleted this entry.
+		}
+		else
+			it++;	// Iterate as we didn't modify the list
+
+		bMatch = false;
+//		cout << endl;
+	}
+}
+
+void unittest_PruneFiles() {
+	vector<string> files;
+	vector<string> extsList;
+
+	extsList.push_back("mp4");
+	extsList.push_back("mov");
+	extsList.push_back("tmp");
+
+	files.push_back("1keep.mp4");
+	files.push_back("2keep.MP4");
+	files.push_back("3keep.MOV");
+	files.push_back("4prune.xls");
+	files.push_back("5keep.mp4");
+	files.push_back("6prune");
+	files.push_back(".7prunealso");
+	files.push_back("8pr");
+	files.push_back(".9p");
+
+	cout << "BEFORE: ";
+	for (auto f: files)
+		cout << "'" << f << "' ";
+	cout << endl;
+	pruneFilesList(files, extsList);
+	cout << "AFTER: ";
+	for (auto f: files)
+		cout << "'" << f << "' ";
+	cout << endl;
+}
+
 int main(int argc, const char** argv)
 {
   vector<string> files;
   options.processOpts(argc, argv);
 
+// unittest_ExtValidation();
+// unittest_PruneFiles();
+//exit(1);
+
+  if (options.fileExtRaw != "") {
+  	// Need to validate the input and place it into the options vector
+  	if (!validateFileExts(options.fileExtRaw.c_str(), options.fileExtList)) {
+  		// Invalid.
+  		cout << "ERROR: Option '--fileext' expects to get a comma separated list of" << endl;
+  		cout << "  file extensions. No '*' or '.' - just command separated extensions." << endl;
+  		cout << "  Upper/Lower case does not matter. Extension comparison will be insensitive." << endl;
+  		cout << "  Example: --fileext=MP4,MOV,MPEG" << endl;
+  		exit(-2);
+  	}
+
+  	// Now we have a good extensions list.
+  	// These will be applied to 'sourcedir' when searching.
+  }
+
   if (options.sourceDir != "") {
   	getAllFilesFromPath(options.sourceDir.c_str(), options.sourceDirRecursive, files);
 
-  	cout << "All Files found:" << endl;
-  	for (auto it: files)
-  		cout << " " << it << endl;
+  	// Now let's apply the fileext results to this list to prune it down to our work items.
+  	pruneFilesList(files, options.fileExtList);
   }
 
   return 0;
