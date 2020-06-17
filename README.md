@@ -37,7 +37,7 @@
 ** --help
 ** --version
  --logfile=
- --infile=
+** --infile=
 ** --sourcedir=
 ** --recursive
  --destdir= | --output= (stdout if none specified)
@@ -46,7 +46,7 @@
  --exportgpx
  --combinetracks | --separatetracks
  --maxsamples
- --timebetweensamples
+** --timebetweensamples
  --dryrun (dont actually process the files - just list them and show what would have been)
 
 

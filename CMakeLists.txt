@@ -13,7 +13,7 @@ SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
 # SET(GCC_COVERAGE_LINK_FLAGS    "-lgcov")
 # SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
 
-file(GLOB SOURCES goproWhereWhen.cpp opts.cpp utils.cpp)
+file(GLOB SOURCES goproWhereWhen.cpp goprometa.cpp opts.cpp utils.cpp gpmf-parser/GPMF_mp4reader.c gpmf-parser/GPMF_parser.c)
 #file(GLOB SOURCES GPMF_parser.c "*.cpp" "GPMF_mp4reader.c")
 
 add_executable(goproWhereWhen ${SOURCES})

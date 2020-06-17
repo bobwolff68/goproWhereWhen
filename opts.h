@@ -33,6 +33,7 @@ public:
 	std::vector<std::string> fileExtList;
 	std::string fileExtRaw;
 	std::string inFile;
+	unsigned int timeBetweenSamples;
 
 };
 #endif

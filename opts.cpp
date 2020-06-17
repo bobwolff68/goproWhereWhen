@@ -14,6 +14,7 @@ opts::opts() {
 		fileExtRaw = "MP4";
 		fileExtList.clear();
 		inFile="";
+		timeBetweenSamples = 5;
 	};
 
 opts::~opts() {};
@@ -71,19 +72,13 @@ void opts::processOpts(int argc, const char** argv) {
 	        }
 	    }
 
+	    if (args.has("--timebetweensamples")) {
+	    	timeBetweenSamples = (unsigned int)atoi( args["--timebetweensamples"].c_str() );
+	    }
+
 	    if( args.has("--recursive") ) {
 	        sourceDirRecursive=true;
 	    }
-
-#if 0
-    if( args.has("-d") || args.has("--depth") || args.has("--max-depth") ) {
-        std::string arg = args["-d"];
-        if( arg.empty() ) arg = args["--depth"];
-        if( arg.empty() ) arg = args["--max-depth"];
-        int depth = atoi( arg.c_str() );
-        std::cout << "provided depth: " << depth << std::endl;
-    }
-#endif
 
 };
 
