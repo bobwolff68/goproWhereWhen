@@ -40,6 +40,7 @@ class GPSSample {
 public:
 	GPSSample(TD &_t, double _lat, double _lon, double _ele);
 	~GPSSample();
+	friend std::ostream& operator<<(std::ostream& os, const GPSSample& gs);
 protected:
 	TD t;
 	double lat, lon, ele;

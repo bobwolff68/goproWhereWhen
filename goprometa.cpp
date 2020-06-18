@@ -178,7 +178,7 @@ void GoProMeta::recordSample(double* ptr) {
 	double dLon = *(ptr+1);
 	double dEle = *(ptr+2);
 
-	std::cout << "recording sample: " << currentTime << " " << dLat << " " << dLon << " " << dEle << std::endl;
+//	std::cout << "recording sample: " << currentTime << " " << dLat << " " << dLon << " " << dEle << std::endl;
 	GPSSamples.emplace_back(currentTime, dLat, dLon, dEle);
 }
 
@@ -205,6 +205,12 @@ GPSSample::GPSSample(TD &_t, double _lat, double _lon, double _ele) {
 }
 
 GPSSample::~GPSSample() {};
+
+std::ostream& operator<<(std::ostream& os, const GPSSample& gs)
+{
+	os << "time: " << gs.t << ", " << "lat: " << gs.lat << ", lon: " << gs.lon << ", ele: " << gs.ele;
+	return os;
+}
 
 TD::TD() {
 			year = 2000;

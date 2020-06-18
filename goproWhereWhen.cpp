@@ -85,24 +85,28 @@ int main(int argc, const char** argv)
   	GoProMeta *pGPM = new GoProMeta();
   	samples.clear();
 
+  	std::cout << "Processing: " << f << std::endl;
+
   	pGPM->setSecondsBetweenSamples(options.timeBetweenSamples);
-  	
+
   	if (!pGPM->openFile(f.c_str())) {
-  		std::cout << "ERROR: Could not open file: " << f << std::endl;
+  		std::cerr << "ERROR: Could not open file: " << f << std::endl;
   		delete pGPM;
-  		exit(-6);
+  		continue;
+//  		exit(-6);
   	}
 
   	if (!pGPM->processFile()) {
-  		std::cout << "ERROR: Could not process file properly: " << f << std::endl;
+  		std::cerr << "ERROR: Could not process file properly: " << f << std::endl;
   		delete pGPM;
-  		exit(-7);
+  		continue;
+//  		exit(-7);
   	}
 
   	pGPM->getOutputPoints(samples);
   	std::cout << "For file " << f << " Number of samples is: " << samples.size() << std::endl;
-//  	if (samples.size())
-//  		std::cout << " First entry"
+  	if (samples.size())
+  		std::cout << " First entry: " << samples[0] << std::endl;
 
   	delete pGPM;
   }
