@@ -255,6 +255,22 @@ void TD::calcTime() {
   theTime = mktime(&t);
 }
 
+void TD::setToCurrentTime() {
+	time_t t;
+	struct tm* ptm;
+
+	time(&t);
+	ptm = gmtime(&t);
+	year  = ptm->tm_year+1900;
+	month = ptm->tm_mon;
+	day   = ptm->tm_mday;
+	hour  = ptm->tm_hour;
+	minute= ptm->tm_min;
+	second= ptm->tm_sec;
+
+	calcTime();	// set theTime based on UTC now.
+}
+
 time_t TD::getTime() {
   if (theTime==0)
   	calcTime();

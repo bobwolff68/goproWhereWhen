@@ -17,8 +17,7 @@ using namespace	xmlw;
 std::string rightStr(std::string input, size_t rKeep) {
 	// Take rightmost 'chars' from input
 	// Watch out for input being smaller than chars
-
-	return input.substr(std::max((size_t)0, input.size()-rKeep), std::min(rKeep, input.size()));
+	return input.substr(input.size() > rKeep ? input.size()-rKeep : 0, std::min(rKeep, input.size()));
 }
 
 SamplesHandler::SamplesHandler() {
@@ -96,6 +95,30 @@ GPXExporter::~GPXExporter() {
 
 }
 
+void tagGPXStartup(XmlStream &xml) {
+	TD time;
+	time.setToCurrentTime();
+
+	// Assumes xml is already associated with a file that's open.
+	xml << prolog()
+		<< tag("gpx")
+		<< attr("xmlns") << "http://www.topografix.com/GPX/1/1"
+		<< attr("creator") << "goproWhereWhen"
+		<< attr("version") << "1.0"
+		<< attr("xmlns:xsi") << "http://www.w3.org/2001/XMLSchema-instance"
+		<< attr("xsi:schemaLocation") << "http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd";
+
+	xml << tag("metadata")
+			<< tag("link") << attr("href") << "http://www.ridebdr.com"
+				<< tag("text") << chardata() << "Robert Wolff - ADV Fan"
+				<< endtag()
+			<< endtag()
+			<< tag("time") << chardata() << time
+			<< endtag()
+		<< endtag();	// metadata
+
+}
+
 bool GPXExporter::ExportDailySegmented(const char* destdir) {
 	std::string prefix(destdir); // destdir can be empty or null - it's ok.
 	std::map<std::string, std::map<std::string, std::vector<GPSSample>>> outGroups;
@@ -127,11 +150,7 @@ bool GPXExporter::ExportDailySegmented(const char* destdir) {
 
 		XmlStream xml(f);
 
-		xml << prolog() // write XML file declaration
-		    << tag("gpx"); // root tag
-		    	xml << tag("metadata");
-		    	// TODO: Put my metadata in here.
-		    	xml << endtag(); 
+		tagGPXStartup(xml);
 
 		// Now iterate the entry for segments/tracks based on filename
 		// Will need to shorten the filename and ensure uniqueness too

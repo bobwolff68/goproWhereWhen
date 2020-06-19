@@ -20,6 +20,7 @@
 #include <iomanip>
 #include <string>
 #include <vector>
+#include <libgen.h>
 
 #include "opts.h"
 #include "goprometa.h"
@@ -92,7 +93,7 @@ int main(int argc, const char** argv)
   	pGPM->setSecondsBetweenSamples(options.timeBetweenSamples);
 
   	if (!pGPM->openFile(f.c_str())) {
-  		std::cerr << "ERROR: Could not open file: " << f << std::endl;
+//  		std::cerr << "ERROR: Could not open file: " << f << std::endl;
   		delete pGPM;
   		continue;
 //  		exit(-6);
@@ -111,7 +112,7 @@ int main(int argc, const char** argv)
   		std::cerr << " First entry: " << samples[0] << std::endl;
 
 	// Insert samples into SamplesHandler for safe keeping
-	if (!sHandler.AddSampleSet(f.c_str(), samples)) {
+	if (!sHandler.AddSampleSet(basename((char*)f.c_str()), samples)) {
 		std::cerr << "Could not add samples for: " << f << std::endl;
 		// continuing...
 	}
@@ -127,6 +128,6 @@ int main(int argc, const char** argv)
 
 	GPXExporter gpxOut(&sHandler);
 	gpxOut.ExportDailySegmented();
-	
+
   return 0;
 }

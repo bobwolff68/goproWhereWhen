@@ -32,6 +32,7 @@ public:
 	time_t getTime();
 	std::string getDateOnly();
 	bool isValid() { return bIsSet; };
+	void setToCurrentTime();		// get current time and set values from there.
 protected:
 	void calcTime();
 	int year, month, day, hour, minute, second;
