@@ -47,7 +47,9 @@ public:
 	};
 
 	// XmlStream refers std::ostream object to perform actual output operations
-	inline XmlStream(std::ostream&	_s) : s(_s), state(stateNone), prologWritten(false) {}
+	inline XmlStream(std::ostream&	_s) : state(stateNone), s(_s), prologWritten(false), 
+		indLevel(0), bSkipNLIndent(false),
+		spaces("                                                               ") {}
 
 	// Before destroying check whether all the open tags are closed
 	~XmlStream() {
@@ -82,6 +84,7 @@ public:
 
 		case Controller::whatTag:
 			closeTagStart();
+			s << std::endl << spaces.substr(0,2*indLevel++);
 			s << '<';
 			if (controller.str.empty()) {
 				clearTagName();
@@ -106,6 +109,11 @@ public:
 
 			case stateAttribute:
 				s << '\"';
+				break;
+
+			case stateNone:
+			case stateTag:
+				break;
 			}
 
 			if (stateNone != state) {
@@ -118,6 +126,7 @@ public:
 
 		case Controller::whatCharData:
 			closeTagStart();
+			bSkipNLIndent=true;
 			state = stateNone;
 			break;	//	Controller::whatCharData
 		}
@@ -137,6 +146,10 @@ private:
 	std::ostream&	s;
 	bool	prologWritten;
 	std::ostringstream	tagName;
+
+	unsigned int indLevel;
+	bool bSkipNLIndent;
+	std::string spaces;
 
 	// I don't know any way easier (legal) to clear std::stringstream...
 	inline void clearTagName() {
@@ -159,6 +172,10 @@ private:
 			if (self_closed)
 				s << '/';
 			s << '>';
+			break;
+
+		case stateNone:
+			break;
 		}
 	}
 
@@ -166,9 +183,19 @@ private:
 	void endTag(const std::string& tag) {
 		bool	brk = false;
 
+
 		while (tags.size() > 0 && !brk) {
-			if (stateNone == state)
+			if (indLevel) indLevel--;
+
+			if (stateNone == state) {
+				if (!bSkipNLIndent) {
+					s << std::endl << spaces.substr(0,2*indLevel);
+				}
+
+				bSkipNLIndent = false; // Reset skipper
+
 				s << "</" << tags.top() << '>';
+			}
 			else {
 				closeTagStart(true);
 				state = stateNone;
@@ -176,6 +203,7 @@ private:
 			brk = tag.empty() || tag == tags.top();
 			tags.pop();
 		}
+
 	}
 };	//	class XmlStream
 
