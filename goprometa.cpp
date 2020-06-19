@@ -8,6 +8,9 @@
 
 #include "goprometa.h"
 
+// Support for osstringstream
+#include <sstream>
+
 const unsigned int DEFAULT_TIMING = 5;
 
 GoProMeta::GoProMeta() {
@@ -206,10 +209,19 @@ GPSSample::GPSSample(TD &_t, double _lat, double _lon, double _ele) {
 
 GPSSample::~GPSSample() {};
 
+std::string GPSSample::getDateOnly() {
+	return t.getDateOnly();
+}
+
 std::ostream& operator<<(std::ostream& os, const GPSSample& gs)
 {
 	os << "time: " << gs.t << ", " << "lat: " << gs.lat << ", lon: " << gs.lon << ", ele: " << gs.ele;
 	return os;
+}
+
+bool operator<(GPSSample& lhs, GPSSample& rhs)
+{
+	return (lhs.getTime() < rhs.getTime());
 }
 
 TD::TD() {
@@ -217,7 +229,8 @@ TD::TD() {
 			month = day = 1;
 			hour = 12;
 			minute = second = 0;
-			theTime = getTime();
+			theTime = 0;
+			calcTime();
 			bIsSet=false;
 }
 
@@ -225,7 +238,7 @@ TD::~TD() {
 
 }
 
-time_t TD::getTime() {
+void TD::calcTime() {
   struct tm t;
 
   // Load the structure with our time.
@@ -240,7 +253,20 @@ time_t TD::getTime() {
   t.tm_isdst=0;  
 
   theTime = mktime(&t);
+}
+
+time_t TD::getTime() {
+  if (theTime==0)
+  	calcTime();
+
   return theTime;
+}
+
+std::string TD::getDateOnly() {
+	std::ostringstream os;
+
+	os << year << "-" << month << "-" << day;
+	return std::string(os.str()); 
 }
 
 std::ostream& operator<<(std::ostream& os, const TD& dt)
@@ -264,7 +290,12 @@ void TD::readGPMeta(char* gp) {
    	second= 10*(gp[10]-'0')+ (gp[11]-'0');	
 
    	bIsSet=true;
-   	getTime();	
+   	calcTime();	
 }
 
 int TD::getSeconds() { return second; };
+
+bool operator<(TD& lhs, TD& rhs)
+{
+	return (lhs.getTime() < rhs.getTime());
+}

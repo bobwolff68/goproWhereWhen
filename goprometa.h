@@ -26,11 +26,14 @@ public:
 	TD();
 	~TD();
 	friend std::ostream& operator<<(std::ostream& os, const TD& dt);
+	friend bool operator<(TD& lhs, TD& rhs);
 	void readGPMeta(char* gp);
 	int getSeconds();
 	time_t getTime();
+	std::string getDateOnly();
 	bool isValid() { return bIsSet; };
 protected:
+	void calcTime();
 	int year, month, day, hour, minute, second;
 	time_t theTime;
 	bool bIsSet;
@@ -41,6 +44,13 @@ public:
 	GPSSample(TD &_t, double _lat, double _lon, double _ele);
 	~GPSSample();
 	friend std::ostream& operator<<(std::ostream& os, const GPSSample& gs);
+	friend bool operator<(GPSSample& lhs, GPSSample& rhs);
+	time_t getTime() { return t.getTime(); };
+	std::string getDateOnly();
+	double getLat() { return lat; };
+	double getLon() { return lon; };
+	double getEle() { return ele; };
+	TD getTD() { return t; };
 protected:
 	TD t;
 	double lat, lon, ele;

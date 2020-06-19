@@ -23,10 +23,12 @@
 
 #include "opts.h"
 #include "goprometa.h"
+#include "exporters.h"
 
 using namespace std;
 
 opts options;
+SamplesHandler sHandler;
 
 // Utils
 extern	void getAllFilesFromPath(const char* inPath, bool bRecurse, vector<string>& files);
@@ -68,7 +70,7 @@ int main(int argc, const char** argv)
   	// Now let's apply the fileext results to this list to prune it down to our work items.
   	pruneFilesList(files, options.fileExtList);
 
-  	std::cout << "Final Files List:" << std::endl;
+  	std::cerr << "Final Files List:" << std::endl;
   	for (auto f: files)
 	  	std::cout << f << std::endl;
   }
@@ -85,7 +87,7 @@ int main(int argc, const char** argv)
   	GoProMeta *pGPM = new GoProMeta();
   	samples.clear();
 
-  	std::cout << "Processing: " << f << std::endl;
+  	std::cerr << "Processing: " << f << std::endl;
 
   	pGPM->setSecondsBetweenSamples(options.timeBetweenSamples);
 
@@ -104,12 +106,27 @@ int main(int argc, const char** argv)
   	}
 
   	pGPM->getOutputPoints(samples);
-  	std::cout << "For file " << f << " Number of samples is: " << samples.size() << std::endl;
+  	std::cerr << "For file " << f << " Number of samples is: " << samples.size() << std::endl;
   	if (samples.size())
-  		std::cout << " First entry: " << samples[0] << std::endl;
+  		std::cerr << " First entry: " << samples[0] << std::endl;
+
+	// Insert samples into SamplesHandler for safe keeping
+	if (!sHandler.AddSampleSet(f.c_str(), samples)) {
+		std::cerr << "Could not add samples for: " << f << std::endl;
+		// continuing...
+	}
 
   	delete pGPM;
   }
 
+  // Now that we have all the files processed, what shall we do with them?
+
+  // Let's try 'exporting' in groups.
+//	std::map<std::string, std::map<std::string, std::vector<GPSSample>>> groupedDates;
+//	sHandler.ExportDataGroupDailySegmented(groupedDates);
+
+	GPXExporter gpxOut(&sHandler);
+	gpxOut.ExportDailySegmented();
+	
   return 0;
 }

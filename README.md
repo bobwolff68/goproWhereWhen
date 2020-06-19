@@ -44,8 +44,12 @@
 ** --fileext=  (default is .MP4 and .mp4 - list shall be comma separated without spaces, without '*' and without '.' globbing/regex. It is simply a list of file-endings. For instance, --fileext=mp4,mov,mpeg,mpg ... and note upper/lower case does not matter.
  --exportcsv
  --exportgpx
- --combinetracks | --separatetracks
- --maxsamples
+ --grouping=[dailysegmented|dailycombined|allcombined|individual] (default: dailysegmented)
+     dailysegmented: filename is date, each trkseg name is filename (any/all points within a given day are in the single combined file ; In csv, there's a column for filename to allow differentiation/grouping)
+     dailycombined: filename is date, trkseg name is date also (any/all points within a given day are in the single combined file) - 
+     allcombined: filename is ??
+     individual: each file is the original filename. Should the files be in $destdir/ and have the exact same heirarchy followed as the source file list??
+ --maxsamples (For output file, limit the total samples in each file)
 ** --timebetweensamples
  --dryrun (dont actually process the files - just list them and show what would have been)
 
