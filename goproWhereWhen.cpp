@@ -20,6 +20,8 @@
 #include <iomanip>
 #include <string>
 #include <vector>
+
+// basename()
 #include <libgen.h>
 
 #include "opts.h"
@@ -40,6 +42,7 @@ int main(int argc, const char** argv)
 {
   vector<string> files;
   options.processOpts(argc, argv);
+  vector<std::string> skippedFiles;
 
 //#define UNITTEST
 #ifdef UNITTEST
@@ -71,9 +74,9 @@ int main(int argc, const char** argv)
   	// Now let's apply the fileext results to this list to prune it down to our work items.
   	pruneFilesList(files, options.fileExtList);
 
-  	std::cerr << "Final Files List:" << std::endl;
-  	for (auto f: files)
-	  	std::cout << f << std::endl;
+//  	std::cerr << "Final Files List:" << std::endl;
+//  	for (auto f: files)
+//	  	std::cout << f << std::endl;
   }
 
   if (options.inFile != "") {
@@ -84,16 +87,18 @@ int main(int argc, const char** argv)
   vector<GPSSample> samples;
   // At this stage, we have a list of input files that need processed.
   // It's time to decide how to rip through that list and what to do with the results.
+  std::cerr << "Processing: ";
   for (auto f: files) {
   	GoProMeta *pGPM = new GoProMeta();
   	samples.clear();
 
-  	std::cerr << "Processing: " << f << std::endl;
+  	std::cerr << basename((char*)f.c_str()) << ", ";
 
   	pGPM->setSecondsBetweenSamples(options.timeBetweenSamples);
 
   	if (!pGPM->openFile(f.c_str())) {
 //  		std::cerr << "ERROR: Could not open file: " << f << std::endl;
+  		skippedFiles.push_back(f);
   		delete pGPM;
   		continue;
 //  		exit(-6);
@@ -107,12 +112,12 @@ int main(int argc, const char** argv)
   	}
 
   	pGPM->getOutputPoints(samples);
-  	std::cerr << "For file " << f << " Number of samples is: " << samples.size() << std::endl;
-  	if (samples.size())
-  		std::cerr << " First entry: " << samples[0] << std::endl;
+//  	std::cerr << "For file " << f << " Number of samples is: " << samples.size() << std::endl;
+//  	if (samples.size())
+//  		std::cerr << " First entry: " << samples[0] << std::endl;
 
 	// Insert samples into SamplesHandler for safe keeping
-	if (!sHandler.AddSampleSet(basename((char*)f.c_str()), samples)) {
+	if (!sHandler.AddSampleSet(f.c_str(), samples)) {
 		std::cerr << "Could not add samples for: " << f << std::endl;
 		// continuing...
 	}
@@ -120,7 +125,12 @@ int main(int argc, const char** argv)
   	delete pGPM;
   }
 
+  std::cerr << std::endl;
+
   // Now that we have all the files processed, what shall we do with them?
+  //TODO: A --summary might iterate through skippedFiles to list what wasn't done.
+  std::cerr << "Summary: Of " << files.size() << " files, " << files.size() - skippedFiles.size() 
+  	<< " were processed and " << skippedFiles.size() << " were skipped." << std::endl;
 
   // Let's try 'exporting' in groups.
 //	std::map<std::string, std::map<std::string, std::vector<GPSSample>>> groupedDates;

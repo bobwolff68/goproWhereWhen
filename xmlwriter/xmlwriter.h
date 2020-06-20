@@ -32,7 +32,7 @@ public:
 
 	// Internal helper class
 	struct Controller {
-		typedef	enum {whatProlog, whatTag, whatTagEnd, whatAttribute, whatCharData}	what_type;
+		typedef	enum {whatProlog, whatTag, whatTagEnd, whatAttribute, whatCharData, whatIndent}	what_type;
 
 		what_type	what;
 		std::string str;
@@ -49,7 +49,7 @@ public:
 	// XmlStream refers std::ostream object to perform actual output operations
 	inline XmlStream(std::ostream&	_s) : state(stateNone), s(_s), prologWritten(false), 
 		indLevel(0), bSkipNLIndent(false),
-		spaces("                                                               ") {}
+		spaces("                                                               "), bUseIndentation(false) {}
 
 	// Before destroying check whether all the open tags are closed
 	~XmlStream() {
@@ -84,7 +84,9 @@ public:
 
 		case Controller::whatTag:
 			closeTagStart();
-			s << std::endl << spaces.substr(0,2*indLevel++);
+			if (bUseIndentation)
+				s << std::endl << spaces.substr(0,2*indLevel++);
+
 			s << '<';
 			if (controller.str.empty()) {
 				clearTagName();
@@ -129,6 +131,11 @@ public:
 			bSkipNLIndent=true;
 			state = stateNone;
 			break;	//	Controller::whatCharData
+
+		case Controller::whatIndent:
+			bUseIndentation = controller.str=="1" ? true : false;
+			break;
+			
 		}
 
 		return	*this;
@@ -150,6 +157,7 @@ private:
 	unsigned int indLevel;
 	bool bSkipNLIndent;
 	std::string spaces;
+	bool bUseIndentation;
 
 	// I don't know any way easier (legal) to clear std::stringstream...
 	inline void clearTagName() {
@@ -188,9 +196,8 @@ private:
 			if (indLevel) indLevel--;
 
 			if (stateNone == state) {
-				if (!bSkipNLIndent) {
+				if (bUseIndentation && !bSkipNLIndent)
 					s << std::endl << spaces.substr(0,2*indLevel);
-				}
 
 				bSkipNLIndent = false; // Reset skipper
 
@@ -236,6 +243,10 @@ inline const XmlStream::Controller attr(const char* const attr_name) {
 
 inline const XmlStream::Controller chardata() {
 	return XmlStream::Controller(XmlStream::Controller::whatCharData);
+}
+
+inline const XmlStream::Controller useIndentation(const bool use) {
+	return XmlStream::Controller(XmlStream::Controller::whatIndent, use ? "1" : "0");
 }
 
 }	// namespace

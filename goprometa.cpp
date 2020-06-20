@@ -47,7 +47,7 @@ bool GoProMeta::openFile(const char* filename) {
 	mp4 = OpenMP4Source((char*)filename, MOV_GPMF_TRAK_TYPE, MOV_GPMF_TRAK_SUBTYPE);
 	if (mp4 == 0)
 	{
-		std::cerr << "error: " << filename << " is an invalid MP4/MOV or it has no GPMF data" << std::endl;
+//		std::cerr << "error: " << filename << " is an invalid MP4/MOV or it has no GPMF data" << std::endl;
 		return false;
 	}
 
@@ -281,7 +281,10 @@ time_t TD::getTime() {
 std::string TD::getDateOnly() {
 	std::ostringstream os;
 
-	os << year << "-" << month << "-" << day;
+	os << year << "-" 
+		<< std::setfill('0') << std::setw(2) << month << "-" 
+		<< std::setfill('0') << std::setw(2) << day;
+
 	return std::string(os.str()); 
 }
 

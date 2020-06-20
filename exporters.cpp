@@ -9,6 +9,9 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <string>
+
+#include <libgen.h>
 
 #include "exporters.h"
 
@@ -38,6 +41,47 @@ bool SamplesHandler::AddSampleSet(const char* keyname, std::vector<GPSSample> sa
 	return true;
 }
 
+void SamplesHandler::makeUniqueBasenames(std::map<std::string, std::vector<GPSSample>> &inbound) {
+	std::map<std::string, std::vector<GPSSample>> outbound;
+	std::string nameInQuestion;
+
+	// Iterate the inbound list.
+	// Get the basename() for each entry and compare that against the outbound list
+	// For any non-unique item, create a unique version.
+	// Then put it into the outbound list.
+	//
+	// For any item that's found to be unique, simply copy it to the outbound list
+	for (auto in: inbound) {
+		unsigned int ver=1;
+
+		nameInQuestion = basename((char*)in.first.c_str()); // Hopefully it's NOT a troubled name...
+
+		if (outbound.find(nameInQuestion) == outbound.end()) {
+			// It's unique. Didn't find it in the list so we're good to simply add it.
+			outbound[nameInQuestion] = in.second;
+		}
+		else {
+			// Must create unique version of troubledName
+			// 
+			do {
+				std::string candidate;
+
+				candidate = nameInQuestion + "-" + std::to_string(ver);
+
+				// Check this one for uniqueness. If unique, add it and break;
+				if (outbound.find(candidate) == outbound.end()) {
+					outbound[candidate] = in.second;
+					break;
+				}
+			} while(1);
+
+		}
+	}
+
+	// In the end - copy back to the original.
+	inbound = outbound;
+}
+
 void SamplesHandler::ExportDataGroupDailySegmented(
 	std::map<std::string, std::map<std::string, std::vector<GPSSample>>> &outGroups) {
 	// iterate the full map
@@ -46,6 +90,8 @@ void SamplesHandler::ExportDataGroupDailySegmented(
 	  //   No? create the date entry map[date]
 	  // add this filename of samples into the map[date].map[filename]
 	  // Need to make sure duplicate filenames are checked for and added with uniqueness to the final map
+
+	makeUniqueBasenames(trackGroups); // Clean up trackGroups and strip path from keys
 
 	for (auto inmap: trackGroups) {
 		std::string fname = inmap.first;
@@ -61,7 +107,7 @@ void SamplesHandler::ExportDataGroupDailySegmented(
 		trackDate = samples[0].getDateOnly();
 
 		// Quick status update of what's being iterated. #samples, datename, filename
-		std::cout << "Iterating: " << samples.size() << " samples on " << trackDate << " in: ..." << rightStr(fname, 35) << std::endl;
+//		std::cout << "Iterating: " << samples.size() << " samples on " << trackDate << " in: ..." << rightStr(fname, 35) << std::endl;
 
 		if (outGroups.find(trackDate.c_str()) == outGroups.end()) {
 			// No entry for this date yet.
@@ -70,12 +116,12 @@ void SamplesHandler::ExportDataGroupDailySegmented(
 			// Without an entry yet, we'll insert a 'blank' entry and then insert our 'inmap'
 			outGroups[trackDate] = blank;
 			outGroups[trackDate].insert(inmap);
-			// These below didn't work at compile time as much as they made sense to me.
-//xx			outGroups.emplace(trackDate, inmap);
-//xx			outGroups[trackDate] = inmap;
 		}
 		else {
 			// date entry already exists. Add an entry directly to its existing map
+			// No need to be worried about uniqueness in sub-list since all keys
+			// are unique in the original map (by definition) and should already be basenames
+
 			outGroups[trackDate].insert(inmap);
 		}
 
@@ -100,7 +146,7 @@ void tagGPXStartup(XmlStream &xml) {
 	time.setToCurrentTime();
 
 	// Assumes xml is already associated with a file that's open.
-	xml << prolog()
+	xml << useIndentation(true) << prolog()
 		<< tag("gpx")
 		<< attr("xmlns") << "http://www.topografix.com/GPX/1/1"
 		<< attr("creator") << "goproWhereWhen"

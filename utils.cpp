@@ -43,7 +43,7 @@ void getAllFilesFromPath(const char* inPath, bool bRecurse, std::vector<std::str
   		dir = opendir(curPath.c_str());
   		// dir stream is now open and ready for business.
   		if (!dir) {
-  			std::cout << "ERROR: Directory could not be opened: " << curPath << std::endl;
+  			std::cerr << "ERROR: Directory could not be opened: " << curPath << std::endl;
   			exit(-1);
   		}
 

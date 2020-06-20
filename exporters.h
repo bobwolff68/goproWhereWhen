@@ -25,6 +25,7 @@ public:
 	~SamplesHandler();
 	bool AddSampleSet(const char* keyname, std::vector<GPSSample> samples);
 	void ExportDataGroupDailySegmented(std::map<std::string, std::map<std::string, std::vector<GPSSample>>> &outGroups);
+	void makeUniqueBasenames(std::map<std::string, std::vector<GPSSample>> &inbound);
 protected:
 	std::map<std::string, std::vector<GPSSample>> trackGroups;	// All sample groups mapped by filename individually
 };
