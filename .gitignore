@@ -7,11 +7,7 @@
 *.o
 *.obj
 
-goproWhereWhen
-Makefile
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
+build/
 
 # Precompiled Headers
 *.gch
