@@ -69,9 +69,17 @@ public:
 protected:
 	bool processGPS5();
 	bool processGPSU();
+	bool processGPSF();
+	bool processGPSP();
 	void recordSample(double* ptr);
 	void recordSampleIfAppropriate(double* ptr);
 
+	uint8_t lockState;	// 0=No_Lock, 2=2D_Lock, 3=3D_Lock
+	uint16_t GPSPrecision;
+	uint32_t samplesProcessed;
+	uint32_t samplesSkippedForNoLock;
+	uint32_t samplesSkippedForPoorPrecision;
+	
 	size_t mp4;
 	GPMF_stream metadata_stream, *ms;
 	double metadatalength;
@@ -81,6 +89,7 @@ protected:
 	TD currentTime;
 	time_t nextSampleTime;
 	std::vector<GPSSample> GPSSamples;
+	std::string fName;
 };
 
 #endif

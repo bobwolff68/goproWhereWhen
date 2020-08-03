@@ -8,6 +8,9 @@
 
 #include "goprometa.h"
 
+// basename()
+#include <libgen.h>
+
 // Support for osstringstream
 #include <sstream>
 
@@ -41,8 +44,16 @@ void GoProMeta::setSecondsBetweenSamples(unsigned int newtiming) {
 
 bool GoProMeta::openFile(const char* filename) {
 
+	lockState = 0;	// No_Lock
+	samplesProcessed = 0;
+	samplesSkippedForNoLock = 0;
+	samplesSkippedForPoorPrecision = 0;
+	GPSPrecision = 9999;
+
 	if (!filename)
 		return false;
+
+	fName = filename;
 
 	mp4 = OpenMP4Source((char*)filename, MOV_GPMF_TRAK_TYPE, MOV_GPMF_TRAK_SUBTYPE);
 	if (mp4 == 0)
@@ -108,6 +119,22 @@ bool GoProMeta::processFile() {
 		  }
 		  break;
 	  
+		case STR2FOURCC("GPSP"): 
+		  // GPS Precision
+		  if (!processGPSP()) {
+		  	std::cerr << "ERROR: Failed to process GPSP data." << std::endl;
+		  	return false;
+		  }
+		  break;
+
+		case STR2FOURCC("GPSF"): 
+		  // GPS Fix on location
+		  if (!processGPSF()) {
+		  	std::cerr << "ERROR: Failed to process GPSF data." << std::endl;
+		  	return false;
+		  }
+		  break;
+
 		default: // if you don’t know the Key you can skip to the next
 		  break;
 		}
@@ -117,6 +144,9 @@ bool GoProMeta::processFile() {
 	//      but I'll leave it in per the example in case there's some intertwined case I can't see.
 	GPMF_ResetState(ms);
   }
+
+  std::cout << std::endl << basename((char*)fName.c_str()) << ": " << samplesProcessed << " points recorded. " << samplesSkippedForNoLock << " skipped due to NO GPS Lock. " 
+  		<< samplesSkippedForPoorPrecision << " skipped for poor precision." << std::endl;
 
   return true;
 }
@@ -176,13 +206,78 @@ bool GoProMeta::processGPSU() {
    	return true;
 }
 
+bool GoProMeta::processGPSF() {
+	char* pUTC;
+	// raw size of 4 bytes
+	uint8_t val8;
+
+   	pUTC = (char*)GPMF_RawData(ms);
+   	if (!pUTC)
+   		return false;
+//printf("RAW: 0x%02x %02x %02x %02x\n", *pUTC, *(pUTC+1), *(pUTC+2), *(pUTC+3));
+//   	std::cout << "GPSF raw size:" << size << ", samples:" << samples << ", elements:" << elements << ", Raw: 0x" << std::hex << (uint8_t)*pUTC << std::hex << (uint8_t)*(pUTC+1) << std::endl;
+
+	val8 = (uint8_t) *(pUTC+3);
+	switch(val8) {
+		case 0:
+//			if (lockState) // change in status
+//				std::cout << std::endl << "  NO LOCK";
+			lockState = 0;
+			break;
+		case 1:
+			if (lockState != 1)
+				std::cout << std::endl  << "  1d? LOCK" << std::endl;
+			lockState = 1;
+			break;
+		case 2:
+//			if (lockState != 2 && lockState != 3)
+//				std::cout << std::endl  << "  2D LOCK";
+			lockState = 2;
+			break;
+		case 3:
+//			if (lockState != 2 && lockState != 3)
+//				std::cout << std::endl  << "  3D LOCK";
+			lockState = 3;
+			break;
+		default:
+			std::cout << std::endl  << "  UNKNOWN" << std::endl;
+			lockState = 99;
+			break;
+	}
+   	return true;
+}
+
+bool GoProMeta::processGPSP() {
+	unsigned char* pUTC;
+	// Raw size is 2 bytes MSB LSB
+
+   	pUTC = (unsigned char*)GPMF_RawData(ms);
+   	if (!pUTC)
+   		return false;
+
+	GPSPrecision = 256* *(pUTC) + *(pUTC + 1);
+   	return true;
+}
+
 void GoProMeta::recordSample(double* ptr) {
 	double dLat = *ptr;
 	double dLon = *(ptr+1);
 	double dEle = *(ptr+2);
 
-//	std::cout << "recording sample: " << currentTime << " " << dLat << " " << dLon << " " << dEle << std::endl;
-	GPSSamples.emplace_back(currentTime, dLat, dLon, dEle);
+	// Notation for processing or skipping one entry.
+//	std::cout << ".";
+
+	if (!lockState) {
+		samplesSkippedForNoLock++;
+	}
+	else if (GPSPrecision > 1000) {
+		samplesSkippedForPoorPrecision++;
+	}
+	else {
+		samplesProcessed++;
+//		std::cout << "recording sample: " << currentTime << " " << dLat << " " << dLon << " " << dEle << std::endl;
+		GPSSamples.emplace_back(currentTime, dLat, dLon, dEle);
+	}
 }
 
 void GoProMeta::recordSampleIfAppropriate(double* ptr) {

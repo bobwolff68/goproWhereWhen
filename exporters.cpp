@@ -150,7 +150,7 @@ void tagGPXStartup(XmlStream &xml) {
 		<< tag("gpx")
 		<< attr("xmlns") << "http://www.topografix.com/GPX/1/1"
 		<< attr("creator") << "goproWhereWhen"
-		<< attr("version") << "1.0"
+		<< attr("version") << "1.1"
 		<< attr("xmlns:xsi") << "http://www.w3.org/2001/XMLSchema-instance"
 		<< attr("xsi:schemaLocation") << "http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd";
 
